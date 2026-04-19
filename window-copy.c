@@ -207,6 +207,13 @@ enum window_copy_cmd_clear {
 	WINDOW_COPY_CMD_CLEAR_EMACS_ONLY,
 };
 
+enum window_copy_line_numbers {
+	WINDOW_COPY_LINE_NUMBERS_OFF,
+	WINDOW_COPY_LINE_NUMBERS_ABSOLUTE,
+	WINDOW_COPY_LINE_NUMBERS_RELATIVE,
+	WINDOW_COPY_LINE_NUMBERS_HYBRID,
+};
+
 struct window_copy_cmd_state {
 	struct window_mode_entry	*wme;
 	struct args			*args;
@@ -4635,6 +4642,91 @@ window_copy_write_one(struct window_mode_entry *wme,
 			screen_write_cell(ctx, &gc);
 		}
 	}
+}
+
+u_int
+window_copy_line_number_width(struct window_pane *wp)
+{
+	struct window_mode_entry	*wme = TAILQ_FIRST(&wp->modes);
+	struct window_copy_mode_data	*data;
+	u_int				 lines, digits;
+	int				 mode;
+
+	if (wme == NULL)
+		return (0);
+	if (wme->mode != &window_copy_mode && wme->mode != &window_view_mode)
+		return (0);
+	data = wme->data;
+	if (data == NULL)
+		return (0);
+
+	mode = options_get_number(wp->window->options,
+	    "copy-mode-line-numbers");
+	if (mode == WINDOW_COPY_LINE_NUMBERS_OFF)
+		return (0);
+
+	lines = screen_hsize(data->backing) + screen_size_y(data->backing) + 1;
+	digits = 1;
+	while (lines >= 10) {
+		lines /= 10;
+		digits++;
+	}
+	if (digits < 3)
+		digits = 3;
+	return (digits + 1);
+}
+
+int
+window_copy_get_line_number(struct window_pane *wp, u_int py, u_int *width,
+    u_int *value, int *current)
+{
+	struct window_mode_entry	*wme = TAILQ_FIRST(&wp->modes);
+	struct window_copy_mode_data	*data;
+	u_int				 absolute;
+	int				 mode;
+
+	if (wme == NULL)
+		return (0);
+	if (wme->mode != &window_copy_mode && wme->mode != &window_view_mode)
+		return (0);
+	data = wme->data;
+	if (data == NULL)
+		return (0);
+
+	mode = options_get_number(wp->window->options,
+	    "copy-mode-line-numbers");
+	if (mode == WINDOW_COPY_LINE_NUMBERS_OFF)
+		return (0);
+
+	*width = window_copy_line_number_width(wp);
+	*current = (py == data->cy);
+	absolute = screen_hsize(data->backing) - data->oy + py + 1;
+	if (mode == WINDOW_COPY_LINE_NUMBERS_ABSOLUTE)
+		*value = absolute;
+	else if (mode == WINDOW_COPY_LINE_NUMBERS_HYBRID && *current)
+		*value = absolute;
+	else if (py > data->cy)
+		*value = py - data->cy;
+	else
+		*value = data->cy - py;
+	return (1);
+}
+
+u_int
+window_copy_cursor_offset(struct window_pane *wp, u_int cx, u_int sx)
+{
+	u_int	width = window_copy_line_number_width(wp);
+	u_int	content;
+
+	if (width == 0)
+		return (cx);
+	if (width >= sx)
+		content = 1;
+	else
+		content = sx - width;
+	if (cx >= content)
+		return (sx - 1);
+	return (width + cx);
 }
 
 int

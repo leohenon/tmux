@@ -3575,6 +3575,10 @@ char		*window_copy_get_line(struct window_pane *, u_int);
 int		 window_copy_get_current_offset(struct window_pane *, u_int *,
 		     u_int *);
 char		*window_copy_get_hyperlink(struct window_pane *, u_int, u_int);
+u_int		 window_copy_line_number_width(struct window_pane *);
+int		 window_copy_get_line_number(struct window_pane *, u_int, u_int *,
+		     u_int *, int *);
+u_int		 window_copy_cursor_offset(struct window_pane *, u_int, u_int);
 
 /* window-option.c */
 extern const struct window_mode window_customize_mode;
