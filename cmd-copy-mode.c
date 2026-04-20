@@ -91,10 +91,11 @@ cmd_copy_mode_exec(struct cmd *self, struct cmdq_item *item)
 		line_numbers = options_get_number(wp->window->options,
 		    "copy-mode-line-numbers-mouse");
 	if (!window_pane_set_mode(wp, swp, &window_copy_mode, NULL, args)) {
+		window_copy_set_line_numbers(wp, line_numbers);
 		if (args_has(args, 'M'))
 			window_copy_start_drag(c, &event->m);
-	}
-	window_copy_set_line_numbers(wp, line_numbers);
+	} else
+		window_copy_set_line_numbers(wp, line_numbers);
 	if (args_has(args, 'u'))
 		window_copy_pageup(wp, 0);
 	if (args_has(args, 'd'))
