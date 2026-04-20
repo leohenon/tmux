@@ -4809,9 +4809,18 @@ window_copy_write_line(struct window_mode_entry *wme,
 	struct grid_cell		 gc, mgc, cgc, mkgc;
 	u_int				 sx = screen_size_x(s);
 	u_int				 hsize = screen_hsize(data->backing);
+	u_int				 width = window_copy_line_number_width(wp);
+	u_int				 content_sx;
 	const char			*value;
 	char				*expanded;
 	struct format_tree		*ft;
+
+	if (width >= sx)
+		content_sx = 1;
+	else if (width != 0)
+		content_sx = sx - width;
+	else
+		content_sx = sx;
 
 	ft = format_create_defaults(NULL, NULL, NULL, NULL, wp);
 
@@ -4833,14 +4842,14 @@ window_copy_write_line(struct window_mode_entry *wme,
 			expanded = format_expand(ft, value);
 			if (*expanded != '\0') {
 				screen_write_cursormove(ctx, 0, 0, 0);
-				format_draw(ctx, &gc, sx, expanded, NULL, 0);
+				format_draw(ctx, &gc, content_sx, expanded, NULL, 0);
 			}
 			free(expanded);
 		}
 	}
 
-	if (py == data->cy && data->cx == screen_size_x(s)) {
-		screen_write_cursormove(ctx, screen_size_x(s) - 1, py, 0);
+	if (py == data->cy && data->cx >= content_sx) {
+		screen_write_cursormove(ctx, content_sx - 1, py, 0);
 		screen_write_putc(ctx, &grid_default_cell, '$');
 	}
 
