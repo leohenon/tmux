@@ -4714,7 +4714,8 @@ window_copy_get_line_number(struct window_pane *wp, u_int py, u_int *width,
 	if (mode == WINDOW_COPY_LINE_NUMBERS_OFF)
 		return (0);
 
-	*width = window_copy_line_number_width(wp);
+	if (width != NULL)
+		*width = window_copy_line_number_width(wp);
 	*current = (py == data->cy);
 	absolute = screen_hsize(data->backing) - data->oy + py + 1;
 	if (mode == WINDOW_COPY_LINE_NUMBERS_ABSOLUTE)

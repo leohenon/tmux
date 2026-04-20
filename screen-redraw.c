@@ -1020,14 +1020,14 @@ screen_redraw_draw_pane(struct screen_redraw_ctx *ctx, struct window_pane *wp)
 			{
 				u_int pane_start = rr->px - wp->xoff;
 				u_int pane_end = pane_start + rr->nx;
-				u_int draw_width, line_width, line_value;
+				u_int draw_width, line_value;
 				u_int gutter_start, gutter_end, content_start;
 				int current;
 				const struct grid_cell *gc;
 
-				if (window_copy_get_line_number(wp, j, &line_width,
+				if (window_copy_get_line_number(wp, j, NULL,
 				    &line_value, &current)) {
-					xsnprintf(buf, sizeof buf, "%*u ", (int)line_width - 1,
+					xsnprintf(buf, sizeof buf, "%*u ", (int)gutter - 1,
 					    line_value);
 					gc = current ? &cur_ln_gc : &ln_gc;
 					gutter_start = pane_start;
