@@ -4735,6 +4735,26 @@ window_copy_cursor_offset(struct window_pane *wp, u_int cx, u_int sx)
 	return (width + cx);
 }
 
+u_int
+window_copy_cursor_unoffset(struct window_pane *wp, u_int vx, u_int sx)
+{
+	u_int	width = window_copy_line_number_width(wp);
+	u_int	content;
+
+	if (width == 0)
+		return (vx);
+	if (width >= sx)
+		content = 1;
+	else
+		content = sx - width;
+	if (vx < width)
+		return (0);
+	vx -= width;
+	if (vx >= content)
+		return (content - 1);
+	return (vx);
+}
+
 void
 window_copy_set_line_numbers(struct window_pane *wp, int enabled)
 {
@@ -6128,6 +6148,7 @@ window_copy_move_mouse(struct mouse_event *m)
 {
 	struct window_pane		*wp;
 	struct window_mode_entry	*wme;
+	struct window_copy_mode_data	*data;
 	u_int				 x, y;
 
 	wp = cmd_mouse_pane(m, NULL, NULL);
@@ -6142,6 +6163,8 @@ window_copy_move_mouse(struct mouse_event *m)
 	if (cmd_mouse_at(wp, m, &x, &y, 0) != 0)
 		return;
 
+	data = wme->data;
+	x = window_copy_cursor_unoffset(wp, x, screen_size_x(&data->screen));
 	window_copy_update_cursor(wme, x, y);
 }
 
@@ -6172,6 +6195,7 @@ window_copy_start_drag(struct client *c, struct mouse_event *m)
 	c->tty.mouse_drag_release = window_copy_drag_release;
 
 	data = wme->data;
+	x = window_copy_cursor_unoffset(wp, x, screen_size_x(&data->screen));
 	yg = screen_hsize(data->backing) + y - data->oy;
 	if (x < data->selrx || x > data->endselrx || yg != data->selry)
 		data->selflag = SEL_CHAR;
@@ -6226,6 +6250,7 @@ window_copy_drag_update(struct client *c, struct mouse_event *m)
 
 	if (cmd_mouse_at(wp, m, &x, &y, 0) != 0)
 		return;
+	x = window_copy_cursor_unoffset(wp, x, screen_size_x(&data->screen));
 	old_cx = data->cx;
 	old_cy = data->cy;
 
