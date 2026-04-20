@@ -988,8 +988,11 @@ tty_window_offset1(struct tty *tty, u_int *ox, u_int *oy, u_int *sx, u_int *sy)
 		*ox = 0;
 		*oy = 0;
 	} else {
-		cx = wp->xoff + window_copy_cursor_offset(wp, wp->screen->cx,
-		    screen_size_x(wp->screen));
+		if (window_copy_line_numbers_active(wp))
+			cx = wp->xoff + window_copy_cursor_offset(wp, wp->screen->cx,
+			    screen_size_x(wp->screen));
+		else
+			cx = wp->xoff + wp->screen->cx;
 		cy = wp->yoff + wp->screen->cy;
 
 		if (cx < *sx)

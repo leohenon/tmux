@@ -4646,13 +4646,11 @@ window_copy_write_one(struct window_mode_entry *wme,
 	}
 }
 
-u_int
-window_copy_line_number_width(struct window_pane *wp)
+int
+window_copy_line_numbers_active(struct window_pane *wp)
 {
 	struct window_mode_entry	*wme = TAILQ_FIRST(&wp->modes);
 	struct window_copy_mode_data	*data;
-	u_int				 lines, digits;
-	int				 mode;
 
 	if (wme == NULL)
 		return (0);
@@ -4661,8 +4659,20 @@ window_copy_line_number_width(struct window_pane *wp)
 	data = wme->data;
 	if (data == NULL)
 		return (0);
-	if (!data->line_numbers)
+	return (data->line_numbers);
+}
+
+u_int
+window_copy_line_number_width(struct window_pane *wp)
+{
+	struct window_mode_entry	*wme = TAILQ_FIRST(&wp->modes);
+	struct window_copy_mode_data	*data;
+	u_int				 lines, digits;
+	int				 mode;
+
+	if (!window_copy_line_numbers_active(wp))
 		return (0);
+	data = wme->data;
 
 	mode = options_get_number(wp->window->options,
 	    "copy-mode-line-numbers");
@@ -4883,7 +4893,7 @@ window_copy_redraw_lines(struct window_mode_entry *wme, u_int py, u_int ny)
 	struct screen_write_ctx 	 ctx;
 	u_int				 i;
 
-	if (window_copy_line_number_width(wp) != 0) {
+	if (data->line_numbers) {
 		screen_write_start(&ctx, &data->screen);
 		for (i = py; i < py + ny; i++)
 			window_copy_write_line(wme, &ctx, i);
@@ -5019,8 +5029,15 @@ window_copy_update_cursor(struct window_mode_entry *wme, u_int cx, u_int cy)
 
 	old_cx = data->cx; old_cy = data->cy;
 	data->cx = cx; data->cy = cy;
-	if (window_copy_line_number_width(wp) != 0) {
-		window_copy_redraw_screen(wme);
+	if (data->line_numbers) {
+		screen_write_start(&ctx, &data->screen);
+		if (old_cx == screen_size_x(s))
+			window_copy_write_line(wme, &ctx, old_cy);
+		if (data->cx == screen_size_x(s) && data->cy != old_cy)
+			window_copy_write_line(wme, &ctx, data->cy);
+		screen_write_cursormove(&ctx, data->cx, data->cy, 0);
+		screen_write_stop(&ctx);
+		wp->flags |= (PANE_REDRAW|PANE_REDRAWSCROLLBAR);
 		return;
 	}
 	if (old_cx == screen_size_x(s))
@@ -6067,8 +6084,21 @@ window_copy_scroll_up(struct window_mode_entry *wme, u_int ny)
 	if (data->searchmark != NULL && !data->timeout)
 		window_copy_search_marks(wme, NULL, data->searchregex, 1);
 	window_copy_update_selection(wme, 0, 0);
-	if (window_copy_line_number_width(wp) != 0) {
-		window_copy_redraw_screen(wme);
+	if (data->line_numbers) {
+		screen_write_start(&ctx, &data->screen);
+		screen_write_cursormove(&ctx, 0, 0, 0);
+		screen_write_deleteline(&ctx, ny, 8);
+		window_copy_write_lines(wme, &ctx, screen_size_y(s) - ny, ny);
+		window_copy_write_line(wme, &ctx, 0);
+		if (screen_size_y(s) > 1)
+			window_copy_write_line(wme, &ctx, 1);
+		if (screen_size_y(s) > 3)
+			window_copy_write_line(wme, &ctx, screen_size_y(s) - 2);
+		if (s->sel != NULL && screen_size_y(s) > ny)
+			window_copy_write_line(wme, &ctx, screen_size_y(s) - ny - 1);
+		screen_write_cursormove(&ctx, data->cx, data->cy, 0);
+		screen_write_stop(&ctx);
+		wp->flags |= (PANE_REDRAW|PANE_REDRAWSCROLLBAR);
 		return;
 	}
 
@@ -6108,8 +6138,18 @@ window_copy_scroll_down(struct window_mode_entry *wme, u_int ny)
 	if (data->searchmark != NULL && !data->timeout)
 		window_copy_search_marks(wme, NULL, data->searchregex, 1);
 	window_copy_update_selection(wme, 0, 0);
-	if (window_copy_line_number_width(wp) != 0) {
-		window_copy_redraw_screen(wme);
+	if (data->line_numbers) {
+		screen_write_start(&ctx, &data->screen);
+		screen_write_cursormove(&ctx, 0, 0, 0);
+		screen_write_insertline(&ctx, ny, 8);
+		window_copy_write_lines(wme, &ctx, 0, ny);
+		if (s->sel != NULL && screen_size_y(s) > ny)
+			window_copy_write_line(wme, &ctx, ny);
+		else if (ny == 1)
+			window_copy_write_line(wme, &ctx, 1);
+		screen_write_cursormove(&ctx, data->cx, data->cy, 0);
+		screen_write_stop(&ctx);
+		wp->flags |= (PANE_REDRAW|PANE_REDRAWSCROLLBAR);
 		return;
 	}
 

@@ -951,17 +951,17 @@ screen_redraw_draw_pane(struct screen_redraw_ctx *ctx, struct window_pane *wp)
 	struct visible_ranges	*r;
 	struct visible_range	*rr;
 	struct format_tree	*ft = NULL;
-	u_int			 i, j, k, top, x, y, width;
-	u_int			 gutter = window_copy_line_number_width(wp);
+	u_int			 i, j, k, top, x, y, width, gutter = 0;
 	char			 buf[64];
-	int			 have_gutter = 0;
+	int			 have_gutter = window_copy_line_numbers_active(wp);
 
 	if (wp->base.mode & MODE_SYNC)
 		screen_write_stop_sync(wp);
 
 	log_debug("%s: %s @%u %%%u", __func__, c->name, w->id, wp->id);
 
-	if (gutter != 0) {
+	if (have_gutter) {
+		gutter = window_copy_line_number_width(wp);
 		ft = format_create_defaults(NULL, c, c->session, c->session->curw,
 		    wp);
 		style_apply(&ln_gc, w->options, "copy-mode-line-number-style", ft);
