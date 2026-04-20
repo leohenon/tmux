@@ -1212,6 +1212,13 @@ const struct options_table_entry options_table[] = {
 	  .text = "Line number mode in copy mode."
 	},
 
+	{ .name = "copy-mode-line-numbers-mouse",
+	  .type = OPTIONS_TABLE_FLAG,
+	  .scope = OPTIONS_TABLE_WINDOW,
+	  .default_num = 0,
+	  .text = "Whether line numbers appear when entering copy mode with the mouse."
+	},
+
 	{ .name = "copy-mode-line-number-style",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_WINDOW,

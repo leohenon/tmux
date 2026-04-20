@@ -88,7 +88,8 @@ cmd_copy_mode_exec(struct cmd *self, struct cmdq_item *item)
 		swp = wp;
 	line_numbers = 1;
 	if (event != NULL && KEYC_IS_MOUSE(event->key))
-		line_numbers = 0;
+		line_numbers = options_get_number(wp->window->options,
+		    "copy-mode-line-numbers-mouse");
 	if (!window_pane_set_mode(wp, swp, &window_copy_mode, NULL, args)) {
 		if (args_has(args, 'M'))
 			window_copy_start_drag(c, &event->m);
