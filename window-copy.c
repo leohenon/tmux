@@ -4654,7 +4654,7 @@ window_copy_line_numbers_active(struct window_pane *wp)
 
 	if (wme == NULL)
 		return (0);
-	if (wme->mode != &window_copy_mode && wme->mode != &window_view_mode)
+	if (wme->mode != &window_copy_mode)
 		return (0);
 	data = wme->data;
 	if (data == NULL)
@@ -4701,7 +4701,7 @@ window_copy_get_line_number(struct window_pane *wp, u_int py, u_int *width,
 
 	if (wme == NULL)
 		return (0);
-	if (wme->mode != &window_copy_mode && wme->mode != &window_view_mode)
+	if (wme->mode != &window_copy_mode)
 		return (0);
 	data = wme->data;
 	if (data == NULL)
@@ -4774,7 +4774,7 @@ window_copy_set_line_numbers(struct window_pane *wp, int enabled)
 
 	if (wme == NULL)
 		return;
-	if (wme->mode != &window_copy_mode && wme->mode != &window_view_mode)
+	if (wme->mode != &window_copy_mode)
 		return;
 	data = wme->data;
 	if (data == NULL)
