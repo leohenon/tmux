@@ -5030,8 +5030,26 @@ window_copy_update_cursor(struct window_mode_entry *wme, u_int cx, u_int cy)
 
 	old_cx = data->cx; old_cy = data->cy;
 	data->cx = cx; data->cy = cy;
-	if (window_copy_line_number_width(wp) != 0) {
-		window_copy_redraw_screen(wme);
+	if (window_copy_line_numbers_active(wp)) {
+		u_int width = window_copy_line_number_width(wp);
+		u_int content_sx;
+
+		if (s->sel != NULL || data->lineflag != LINE_SEL_NONE ||
+		    old_cy != data->cy) {
+			window_copy_redraw_screen(wme);
+			return;
+		}
+		if (width >= screen_size_x(s))
+			content_sx = 1;
+		else
+			content_sx = screen_size_x(s) - width;
+		if (old_cx >= content_sx || data->cx >= content_sx) {
+			window_copy_redraw_screen(wme);
+			return;
+		}
+		screen_write_start_pane(&ctx, wp, NULL);
+		screen_write_cursormove(&ctx, data->cx, data->cy, 0);
+		screen_write_stop(&ctx);
 		return;
 	}
 	if (old_cx == screen_size_x(s))
